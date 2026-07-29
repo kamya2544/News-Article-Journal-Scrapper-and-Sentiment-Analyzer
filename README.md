@@ -7,7 +7,7 @@ An enterprise-grade, modular Sentiment Analysis and Natural Language Processing 
 ## Key Features
 
 1. **Scraping-Based Feed Processing**: Automatically scrapes configured energy feed URLs, downloads the body text, extracts image assets, and performs OCR to merge text before NLP analysis.
-2. **Scheduled Cron Workflows**: Fully integrated APScheduler triggers feed scrapers automatically (e.g., every Monday at 9 AM IST). Supports manual immediate triggers.
+2. **Scheduled Cron Workflows**: Fully integrated APScheduler triggers feed scrapers automatically (e.g., every Monday at 9 AM IST). All database records, process logs, and execution schedules are standard in the **IST (Asia/Kolkata)** timezone. Supports manual immediate triggers.
 3. **Dual-Database Persistence**:
    - **MySQL**: Relational storage for article metadata, overall and aspect sentiment results, extracted entities, and scheduler logs.
    - **ChromaDB**: Vector storage for semantic embedding search and future RAG integration.
@@ -36,7 +36,6 @@ sentiment_analysis/
 ├── scraper.py          # Consolidated HTML feeds parsing and scheduled cron-jobs
 └── services.py         # Scraping core, business driver explainability, and database repository logic
 tests/                  # Automated pytest suite
-scratch/                # Developer diagnostic scripts
 ```
 
 ---
