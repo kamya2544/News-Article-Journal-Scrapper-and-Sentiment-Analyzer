@@ -18,6 +18,9 @@ An enterprise-grade, modular Sentiment Analysis and Natural Language Processing 
 ### 4. Sentiment & Aspect-Based Sentiment Details
 ![Sentiment Details View](docs/images/dashboard_sentiment.png)
 
+### 5. MySQL Database Relational Tables
+![MySQL Workbench Database View](docs/images/db_workbench.png)
+
 ---
 
 ## Key Features
