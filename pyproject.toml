@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "sentiment-analysis-poc"
+version = "0.1.0"
+description = "Enterprise Sentiment Analysis Microservice POC for ENR MI Tool"
+authors = ["KPMG ENR Team"]
+readme = "README.md"
+packages = [{include = "sentiment_analysis"}]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.15"
+fastapi = "^0.110.0"
+uvicorn = "^0.28.0"
+pydantic = "^2.6.0"
+pydantic-settings = "^2.2.0"
+httpx = "^0.27.0"
+beautifulsoup4 = "^4.12.0"
+trafilatura = "^1.8.0"
+spacy = "^3.7.0"
+easyocr = "^1.7.0"
+transformers = "^4.38.0"
+torch = "^2.2.0"
+pillow = "^10.2.0"
+loguru = "^0.7.2"
+python-dotenv = "^1.0.1"
+sqlalchemy = "^2.0.28"
+pymysql = "^1.1.0"
+chromadb = "^0.4.24"
+cryptography = "^42.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+pytest-asyncio = "^0.23.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

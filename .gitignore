@@ -1,0 +1,28 @@
+# Python Cache/Compiled
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Configuration and Database
+.env
+chromadb_data/
+*.db
+*.sqlite
+
+# IDEs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
