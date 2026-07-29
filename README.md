@@ -4,6 +4,22 @@ An enterprise-grade, modular Sentiment Analysis and Natural Language Processing 
 
 ---
 
+## System Dashboard Preview
+
+### 1. Configurations & Logs Overview
+![Dashboard Main View](docs/images/dashboard_main.png)
+
+### 2. Analyzed Articles Feed
+![Articles Feed View](docs/images/dashboard_feed.png)
+
+### 3. Named Entity Recognition (NER)
+![NER Tagged Entities View](docs/images/dashboard_entities.png)
+
+### 4. Sentiment & Aspect-Based Sentiment Details
+![Sentiment Details View](docs/images/dashboard_sentiment.png)
+
+---
+
 ## Key Features
 
 1. **Scraping-Based Feed Processing**: Automatically scrapes configured energy feed URLs, downloads the body text, extracts image assets, and performs OCR to merge text before NLP analysis.
