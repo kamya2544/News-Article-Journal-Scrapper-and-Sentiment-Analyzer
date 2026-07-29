@@ -103,6 +103,8 @@ Once the server is running, the interactive Swagger documentation is available a
 - **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
+![Swagger UI Interface](docs/images/api_swagger.png)
+
 ### Summary of REST endpoints
 - `GET /api/v1/health`: Checks system health status.
 - `GET /api/v1/scraper/configs`: List all scraper configurations.
