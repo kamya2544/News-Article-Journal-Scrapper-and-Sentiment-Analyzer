@@ -1,15 +1,15 @@
-import sys
 import asyncio
-
-if sys.platform == "win32":
-    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-
+import sys
 import uvicorn
 from sentiment_analysis.core import settings
 
+# On Windows, we configure the Proactor event loop to ensure proper asynchronous operations.
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
 if __name__ == "__main__":
-    # Disable reload on Windows to prevent Uvicorn from forcing the SelectorEventLoop,
-    # which raises NotImplementedError for Playwright's subprocesses.
+    # We disable reload on Windows because Uvicorn's reload feature forces the SelectorEventLoop,
+    # which is incompatible with Playwright's subprocess requirements.
     reload_enabled = sys.platform != "win32"
     uvicorn.run(
         "sentiment_analysis.main:app",

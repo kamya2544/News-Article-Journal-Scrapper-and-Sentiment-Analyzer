@@ -1,12 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy.orm import Session
-from typing import List
-from loguru import logger
 from datetime import datetime, timezone
 import os
+import time
+from typing import List
 
-from sentiment_analysis.core import settings, get_ist_time
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import HTMLResponse, RedirectResponse
+from loguru import logger
+from sqlalchemy.orm import Session
+
+from sentiment_analysis.core import (
+    settings,
+    get_ist_time,
+    update_env_file_scraper_websites,
+    remove_env_file_scraper_website
+)
 from sentiment_analysis.db import get_db, Article, ScraperConfig, ScraperLog
 from sentiment_analysis.services import NlpPipelineOrchestrator, ArticleRepository, SentimentRepository
 from sentiment_analysis.providers import get_provider_factory
@@ -75,8 +82,17 @@ def create_scraper_config(payload: ScraperConfigCreate, db: Session = Depends(ge
     db.commit()
     db.refresh(config)
     
-    # Update scheduler
+    # Register this configuration schedule with the background scheduler
     update_job_schedule(config)
+    
+    # Synchronize the new configuration with the .env file
+    update_env_file_scraper_websites({
+        "name": config.name,
+        "base_url": config.base_url,
+        "scrape_url": config.scrape_url,
+        "schedule_cron": config.schedule_cron,
+        "is_active": config.is_active
+    })
     
     return config
 
@@ -86,11 +102,18 @@ def delete_scraper_config(id: int, db: Session = Depends(get_db)):
     if not config:
         raise HTTPException(status_code=404, detail="Scraper configuration not found")
     
+    config_name = config.name
+    config_url = config.scrape_url
+
     db.delete(config)
     db.commit()
     
-    # Remove from scheduler
+    # Remove the scheduled job from the background scheduler
     remove_job(id)
+    
+    # Remove the configuration from the .env file
+    remove_env_file_scraper_website(config_name)
+    remove_env_file_scraper_website(config_url)
     
     return None
 
@@ -119,7 +142,6 @@ def get_articles(
     db: Session = Depends(get_db),
     orchestrator: NlpPipelineOrchestrator = Depends(get_pipeline_orchestrator)
 ):
-    import time
     articles = db.query(Article).order_by(Article.created_at.desc()).limit(limit).all()
     return [orchestrator.map_db_to_schema(art, time.time()) for art in articles]
 

@@ -1,34 +1,37 @@
-import time
 from datetime import datetime, timezone
-from typing import List, Dict, Any, Tuple, Optional
-import urllib.parse
-from PIL import Image
 import io
-import httpx
-from bs4 import BeautifulSoup
-import trafilatura
-from loguru import logger
-from sqlalchemy.orm import Session
+import time
+from typing import Any, Dict, List, Optional, Tuple
+import urllib.parse
 
-from sentiment_analysis.core import settings, SentimentLabel, ScrapingException, get_ist_time
+from bs4 import BeautifulSoup
+import httpx
+from loguru import logger
+from PIL import Image
+from playwright.async_api import async_playwright
+from playwright_stealth import Stealth
+from sqlalchemy.orm import Session
+import trafilatura
+
+from sentiment_analysis.core import SentimentLabel, ScrapingException, get_ist_time, settings
 from sentiment_analysis.db import (
     Article,
-    OverallSentiment,
     AspectSentiment,
     Entity,
-    Topic,
+    OverallSentiment,
     SentimentDriver,
+    Topic,
     get_chroma_client
 )
 from sentiment_analysis.providers import ProviderFactory
 from sentiment_analysis.schemas import (
-    SentimentAnalysisResponseSchema,
     ArticleMetadataSchema,
-    OverallSentimentSchema,
     AspectSentimentSchema,
     EntitySchema,
+    ExecutionMetadataSchema,
     OCRMetadataSchema,
-    ExecutionMetadataSchema
+    OverallSentimentSchema,
+    SentimentAnalysisResponseSchema
 )
 
 # --- 1. DATA REPOSITORIES ---
@@ -229,8 +232,6 @@ class ScraperService:
 
         if use_playwright:
             logger.info(f"Falling back to Playwright for URL: {url} due to: {fallback_reason}")
-            from playwright.async_api import async_playwright
-            from playwright_stealth import Stealth
             async with async_playwright() as p:
                 browser = await p.chromium.launch(
                     headless=True,

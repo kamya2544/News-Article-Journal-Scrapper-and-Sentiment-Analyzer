@@ -1,10 +1,16 @@
-import os
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Tuple
+import heapq
+import os
+from typing import Any, Dict, List, Tuple
+
+import easyocr
+import numpy as np
 import spacy
-from PIL import Image
 import torch
+from PIL import Image
+from transformers import pipeline
 from loguru import logger
+
 from sentiment_analysis.core import settings, SentimentLabel
 
 # Base Provider Interfaces
@@ -51,8 +57,6 @@ class FinBERTSentimentProvider(SentimentProvider):
 
     def _get_pipeline(self):
         if self._pipeline is None:
-            # Import inside to prevent heavy load if pipeline isn't run
-            from transformers import pipeline
             device = 0 if torch.cuda.is_available() else -1
             logger.info(f"Loading HF sentiment analysis pipeline for model {self.model_name} on device {device}")
             try:
@@ -253,7 +257,6 @@ class EasyOCROCRProvider(OCRProvider):
     def _get_reader(self):
         if self._reader is None:
             if settings.ENABLE_OCR:
-                import easyocr
                 logger.info("Initializing EasyOCR Reader for English...")
                 try:
                     self._reader = easyocr.Reader(['en'], gpu=torch.cuda.is_available())
@@ -272,8 +275,7 @@ class EasyOCROCRProvider(OCRProvider):
             return {"success": False, "text": "", "confidence": 0.0}
 
         try:
-            import numpy as np
-            # Convert PIL Image to numpy array as required by EasyOCR
+            # We convert the PIL Image to a numpy array because EasyOCR processes arrays.
             img_np = np.array(image.convert("RGB"))
             results = reader.readtext(img_np)
             if not results:
@@ -282,7 +284,7 @@ class EasyOCROCRProvider(OCRProvider):
             texts = []
             confidences = []
             for bbox, text, conf in results:
-                if conf > 0.3:  # Filter out low-confidence OCR results
+                if conf > 0.3:  # We ignore low-confidence results to prevent garbled text.
                     texts.append(text)
                     confidences.append(conf)
             
@@ -342,8 +344,7 @@ class SpacySummarizerProvider(SummarizerProvider):
                 if word.text.lower() in word_frequencies:
                     sentence_scores[sent] = sentence_scores.get(sent, 0) + word_frequencies[word.text.lower()]
 
-        # Get top 3 sentences preserving chronological order
-        import heapq
+        # We select the top 3 sentences with the highest frequency scores and sort them chronologically.
         top_sentences = heapq.nlargest(3, sentence_scores, key=sentence_scores.get)
         ordered_sentences = sorted(top_sentences, key=lambda s: s.start)
         

@@ -1,14 +1,17 @@
+import json
+import os
 import sys
-from typing import List, Any
-from enum import Enum
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import field_validator
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
-from loguru import logger
-import pytz
 from datetime import datetime
+from enum import Enum
+from typing import Any, List
+
+import pytz
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from loguru import logger
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 IST = pytz.timezone("Asia/Kolkata")
 
@@ -50,11 +53,46 @@ class Settings(BaseSettings):
         "Carbon Capture"
     ]
 
+    # Default Scraper Websites
+    SCRAPER_WEBSITES: Any = [
+        {
+            "name": "Reuters Energy",
+            "base_url": "https://www.reuters.com",
+            "scrape_url": "https://www.reuters.com/business/energy/lng/",
+            "schedule_cron": "0 9 * * 1",
+            "is_active": True
+        },
+        {
+            "name": "Financial Times Energy",
+            "base_url": "https://www.ft.com",
+            "scrape_url": "https://www.ft.com/energy",
+            "schedule_cron": "0 9 * * 1",
+            "is_active": True
+        },
+        {
+            "name": "Oil & Gas Journal",
+            "base_url": "https://www.ogj.com",
+            "scrape_url": "https://www.ogj.com",
+            "schedule_cron": "0 9 * * 1",
+            "is_active": True
+        }
+    ]
+
     @field_validator("ALLOWED_ASPECTS", mode="before")
     @classmethod
     def parse_allowed_aspects(cls, v):
         if isinstance(v, str):
             return [item.strip() for item in v.split(",") if item.strip()]
+        return v
+
+    @field_validator("SCRAPER_WEBSITES", mode="before")
+    @classmethod
+    def parse_scraper_websites(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except Exception as e:
+                logger.error(f"Failed to parse SCRAPER_WEBSITES JSON: {e}")
         return v
 
     model_config = SettingsConfigDict(
@@ -64,6 +102,114 @@ class Settings(BaseSettings):
     )
 
 settings = Settings()
+
+def update_env_file_scraper_websites(new_site: dict):
+    """Appends or updates a scraper configuration in the .env file."""
+    # Avoid modifying the actual .env file during unit testing.
+    if "pytest" in sys.modules or "pytest" in sys.argv[0]:
+        logger.info("Test environment detected. Skipping .env file write.")
+        new_websites_list = list(settings.SCRAPER_WEBSITES)
+        for i, site in enumerate(new_websites_list):
+            if site.get("name") == new_site["name"] or site.get("scrape_url") == new_site["scrape_url"]:
+                new_websites_list[i] = new_site
+                settings.SCRAPER_WEBSITES = new_websites_list
+                return
+        new_websites_list.append(new_site)
+        settings.SCRAPER_WEBSITES = new_websites_list
+        return
+
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    env_path = os.path.join(current_dir, "..", ".env")
+    
+    if not os.path.exists(env_path):
+        env_path = os.path.abspath(".env")
+        
+    lines = []
+    if os.path.exists(env_path):
+        with open(env_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            
+    found = False
+    new_websites_list = list(settings.SCRAPER_WEBSITES)
+    
+    exists = False
+    for i, site in enumerate(new_websites_list):
+        if site.get("name") == new_site["name"] or site.get("scrape_url") == new_site["scrape_url"]:
+            new_websites_list[i] = new_site
+            exists = True
+            break
+    if not exists:
+        new_websites_list.append(new_site)
+        
+    settings.SCRAPER_WEBSITES = new_websites_list
+    websites_json = json.dumps(new_websites_list)
+    new_line = f"SCRAPER_WEBSITES={websites_json}\n"
+    
+    new_lines = []
+    for line in lines:
+        if line.strip().startswith("SCRAPER_WEBSITES="):
+            new_lines.append(new_line)
+            found = True
+        else:
+            new_lines.append(line)
+            
+    if not found:
+        if not new_lines or not new_lines[-1].endswith("\n"):
+            new_lines.append("\n")
+        new_lines.append("# List of default scraper configurations (JSON format)\n")
+        new_lines.append(new_line)
+        
+    with open(env_path, "w", encoding="utf-8") as f:
+        f.writelines(new_lines)
+    logger.info(f"Successfully added/updated website '{new_site['name']}' in .env file.")
+
+
+def remove_env_file_scraper_website(name_or_url: str):
+    """Removes a scraper configuration from the .env file."""
+    # Avoid modifying the actual .env file during unit testing.
+    if "pytest" in sys.modules or "pytest" in sys.argv[0]:
+        logger.info("Test environment detected. Skipping .env file write.")
+        new_websites_list = [
+            site for site in settings.SCRAPER_WEBSITES 
+            if site.get("name") != name_or_url and site.get("scrape_url") != name_or_url
+        ]
+        settings.SCRAPER_WEBSITES = new_websites_list
+        return
+
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    env_path = os.path.join(current_dir, "..", ".env")
+    
+    if not os.path.exists(env_path):
+        env_path = os.path.abspath(".env")
+        
+    if not os.path.exists(env_path):
+        return
+        
+    with open(env_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+        
+    new_websites_list = [
+        site for site in settings.SCRAPER_WEBSITES 
+        if site.get("name") != name_or_url and site.get("scrape_url") != name_or_url
+    ]
+    
+    settings.SCRAPER_WEBSITES = new_websites_list
+    websites_json = json.dumps(new_websites_list)
+    new_line = f"SCRAPER_WEBSITES={websites_json}\n"
+    
+    new_lines = []
+    found = False
+    for line in lines:
+        if line.strip().startswith("SCRAPER_WEBSITES="):
+            new_lines.append(new_line)
+            found = True
+        else:
+            new_lines.append(line)
+            
+    if found:
+        with open(env_path, "w", encoding="utf-8") as f:
+            f.writelines(new_lines)
+        logger.info(f"Successfully removed website '{name_or_url}' from .env file.")
 
 # --- 2. ENUMS ---
 

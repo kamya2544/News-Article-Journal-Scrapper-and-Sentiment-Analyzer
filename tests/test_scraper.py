@@ -1,6 +1,10 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+
+from sentiment_analysis.core import ScrapingException
 from sentiment_analysis.db import ScraperConfig, ScraperLog
+from sentiment_analysis.services import ScraperService
 
 def test_create_scraper_config(client):
     payload = {
@@ -107,9 +111,6 @@ def test_manual_run_scraper(mock_run_pipeline, mock_scrape_url, mock_http_client
     assert data["articles_scraped"] == 1
     assert data["articles_updated"] == 0
 
-from sentiment_analysis.services import ScraperService
-from sentiment_analysis.core import ScrapingException
-from unittest.mock import patch, MagicMock
 
 @pytest.mark.asyncio
 async def test_scraper_paywall_detection():

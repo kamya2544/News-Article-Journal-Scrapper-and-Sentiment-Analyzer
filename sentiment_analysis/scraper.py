@@ -1,18 +1,22 @@
-import hashlib
-import urllib.parse
 from datetime import datetime, timezone
+import hashlib
+import traceback
+import urllib.parse
+
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 from bs4 import BeautifulSoup
 import httpx
 from loguru import logger
+from playwright.async_api import async_playwright
+from playwright_stealth import Stealth
 import pytz
 from sqlalchemy.orm import Session
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
 
-from sentiment_analysis.db import SessionLocal, Article, ScraperConfig, ScraperLog
-from sentiment_analysis.services import NlpPipelineOrchestrator, ScraperService, ArticleRepository, SentimentRepository
-from sentiment_analysis.providers import get_provider_factory
 from sentiment_analysis.core import get_ist_time, settings
+from sentiment_analysis.db import SessionLocal, Article, ScraperConfig, ScraperLog
+from sentiment_analysis.providers import get_provider_factory
+from sentiment_analysis.services import NlpPipelineOrchestrator, ScraperService, ArticleRepository, SentimentRepository
 
 # --- 1. SCRAPER ORCHESTRATOR ---
 
@@ -71,8 +75,6 @@ class ScraperOrchestrator:
 
             if use_playwright:
                 logger.info(f"Falling back to Playwright for listing page: {config.scrape_url} due to: {fallback_reason}")
-                from playwright.async_api import async_playwright
-                from playwright_stealth import Stealth
                 async with async_playwright() as p:
                     browser = await p.chromium.launch(
                         headless=True,
@@ -181,7 +183,6 @@ class ScraperOrchestrator:
 
         except Exception as e:
             logger.error(f"Scraper run failed: {str(e)}")
-            import traceback
             logger.error(traceback.format_exc())
             log_entry.status = "failed"
             log_entry.error_message = str(e)

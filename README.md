@@ -104,7 +104,6 @@ poetry run uvicorn main:app --reload
 
 Once the server is running, the interactive Swagger documentation is available at:
 - **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
 ![Swagger UI Interface](docs/images/api_swagger.png)
 
